@@ -100,7 +100,7 @@ function App() {
   // Command processing
   const processCommand = (command) => {
     command = command.toLowerCase().trim();
-    console.log('Processing command:', command);
+    
 
     try {
       if (command.includes("time") || command.includes("current time")) {
@@ -186,7 +186,8 @@ function App() {
       }
     }
     
-    console.log(`Extracted location: "${location}"`);
+    
+    
     return location;
   };
 
