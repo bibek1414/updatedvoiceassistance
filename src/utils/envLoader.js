@@ -1,22 +1,13 @@
+// src/utils/envLoader.js
 export const loadEnvVariables = async () => {
-    const ENV = {};
+    console.log('Loading environment variables...');
+    const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+    console.log('Weather API Key:', WEATHER_API_KEY);
     
-    try {
-      console.log('Loading environment variables...');
-      
-      // Load the weather API key from environment variables
-      ENV.WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
-      
-      // Debug log to check the value
-      console.log('Weather API Key:', ENV.WEATHER_API_KEY);
-      
-      if (!ENV.WEATHER_API_KEY) {
-        console.warn('Weather API key not found in environment variables');
-      }
-      
-      return ENV;
-    } catch (error) {
-      console.error('Error loading environment variables:', error);
-      return ENV;
+    if (!WEATHER_API_KEY) {
+      console.warn('Weather API key not found in environment variables');
+      throw new Error('Weather API key not found');
     }
+    
+    return { WEATHER_API_KEY };
 };
