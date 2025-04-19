@@ -28,6 +28,7 @@ const sampleFiles = [
 
 function App() {
   const [env, setEnv] = useState({});
+  const [isEnvReady, setIsEnvReady] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [conversation, setConversation] = useState([{
     text: "Hello, I'm your voice assistant. How can I help you today?",
@@ -44,18 +45,33 @@ function App() {
 
   useEffect(() => {
     const initApp = async () => {
-      // Load environment variables
-      const envVars = await loadEnvVariables();
-      setEnv(envVars);
-      
-      // Welcome message
-      setTimeout(() => {
-        speak("Hello, I'm your voice assistant. How can I help you today?");
-      }, 1000);
+      try {
+        // Load environment variables
+        const envVars = await loadEnvVariables();
+        console.log('Loaded environment variables:', envVars);
+        
+        if (!envVars.WEATHER_API_KEY) {
+          console.warn('Weather API key missing after loading environment variables');
+        }
+        
+        setEnv(envVars);
+        setIsEnvReady(true); // Mark environment as ready
+        
+        // Welcome message
+        setTimeout(() => {
+          speak("Hello, I'm your voice assistant. How can I help you today?");
+        }, 1000);
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
     };
 
     initApp();
   }, []);
+
+  useEffect(() => {
+    console.log('Environment state updated:', env);
+  }, [env]);
 
   // Function to add a message to the conversation
   const addMessage = (text, sender) => {
@@ -95,22 +111,35 @@ function App() {
     
     // Weather inquiry
     else if (command.includes("weather")) {
-      // Check if ENV has a valid API key
-      if (!env.WEATHER_API_KEY) {
+      if (!isEnvReady) {
+        respond("Please wait, the system is still initializing...");
+        return;
+      }
+      
+      // Use the env directly from the function parameter or state
+      const weatherApiKey = import.meta.env.VITE_WEATHER_API_KEY || env.WEATHER_API_KEY;
+      
+      if (!weatherApiKey) {
         respond("Weather feature is not configured. Please add your API key to the .env file.");
         return;
       }
       
-      // Check if a location is specified
+      // Extract location - handle "today" and default cases
       let location = "New York"; // Default city
       
-      // Try to extract location from command
-      const locationMatches = command.match(/weather (?:in|for|at) (.+)/i);
-      if (locationMatches && locationMatches[1]) {
-        location = locationMatches[1].trim();
+      if (command.includes("today")) {
+        // Remove "today" from the query to get location
+        location = command.replace(/weather|today|in|for|at|\?/gi, '').trim();
+        if (!location) location = "New York";
+      } else {
+        // Existing location extraction logic
+        const locationMatches = command.match(/weather (?:in|for|at) (.+)/i);
+        if (locationMatches && locationMatches[1]) {
+          location = locationMatches[1].trim();
+        }
       }
       
-      getWeatherData(location);
+      getWeatherData(location, weatherApiKey);
     }
     
     // Scheduling tasks
